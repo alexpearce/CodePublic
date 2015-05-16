@@ -3,6 +3,7 @@
 
 #include "TMultiGraph.h"
 #include <iostream>
+#include <set>
 
 class EfficiencyBinCollection;
 
@@ -38,6 +39,7 @@ class EfficiencyBin : public TMultiGraph {
   // and -1 if there is something weird due to weights. This ensures a
   // priority when merging bins.
   virtual void UpdateEfficiency();
+  virtual void SmearEfficiency();
 
   // Some static factory functions for typical shapes
   static EfficiencyBin* RectangularBin(Double_t x1, Double_t y1, Double_t x2, Double_t y2);
@@ -59,6 +61,7 @@ class EfficiencyBin : public TMultiGraph {
   Double_t m_efficiency = 0;
   Double_t m_efficiency_error = 0;
 
+
   // For now, only some shapes are supported. So forbid manual construction.
   EfficiencyBin() {};
   EfficiencyBin(TGraph* _graph) : TMultiGraph() {
@@ -71,7 +74,8 @@ class EfficiencyBin : public TMultiGraph {
 
   // A reference to the mother bin if the bin got added to another somewhere.
   EfficiencyBin* mother_bin = nullptr;
-  std::vector<EfficiencyBin*> neighbours;
+  std::set<EfficiencyBin*> m_neighbours;
+  std::set<EfficiencyBin*> m_sub_bins;
   EfficiencyBin* GetTopLevel() {
     if (mother_bin == nullptr) {
       return this;
@@ -80,5 +84,9 @@ class EfficiencyBin : public TMultiGraph {
     }
   }
 };
+
+namespace AdaptiveBinning {
+Double_t Kappa(EfficiencyBin* bin1, EfficiencyBin* bin2);
+}
 
 #endif

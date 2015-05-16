@@ -28,12 +28,14 @@ class EfficiencyBinCollection {
 
   // Updates all efficiencies
   virtual void UpdateEfficiencies();
+  virtual void SmearEfficiencies();
 
   // Makes something plotable
-  virtual TH2Poly* MakePH2Poly();
+  virtual TH2Poly* MakePH2Poly(bool _binmap = false);
 
   // Function to fill the neighbour informations
   virtual void BuiltNeighbourhood();
+  virtual void MergeBins(Double_t _max_kappa);
 
   private:
   /* data */
