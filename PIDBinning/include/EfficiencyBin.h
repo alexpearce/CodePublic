@@ -4,6 +4,7 @@
 #include "TMultiGraph.h"
 #include <iostream>
 #include <set>
+#include "TF1.h"
 
 class EfficiencyBinCollection;
 
@@ -33,12 +34,14 @@ class EfficiencyBin : public TMultiGraph {
   Double_t GetEfficiency() const { return m_efficiency; }
   Double_t GetEfficiencyError() const { return m_efficiency_error; }
 
+  std::vector<Double_t> GetSmearedEfficiency() const { return smeared; }
+
   // Fill this bin, flag indicates if the event passed the selection
   virtual void Fill(bool _passed = false, Double_t _weight = 1.0);
   // Updates the efficiencies. Uncertainty is -1000 if the bin is empty
   // and -1 if there is something weird due to weights. This ensures a
   // priority when merging bins.
-  virtual void UpdateEfficiency();
+  virtual void UpdateEfficiency(bool final = false);
   virtual void SmearEfficiency();
 
   // Some static factory functions for typical shapes
@@ -59,7 +62,10 @@ class EfficiencyBin : public TMultiGraph {
   Double_t m_sum_Sq_total = 0;
 
   Double_t m_efficiency = 0;
+  std::vector<Double_t> smeared;
   Double_t m_efficiency_error = 0;
+
+  static TF1* smear;
 
 
   // For now, only some shapes are supported. So forbid manual construction.
@@ -70,6 +76,12 @@ class EfficiencyBin : public TMultiGraph {
       exit(-1);
     }
     Add(_graph);
+    if(smear==nullptr){
+      std::cout << "Creating smear function!" << std::endl;
+      smear = new TF1("smear","x**[0]*(1-x)**[1]",0.,1.);
+      smear->SetNpx(5000);
+    }
+    smeared.resize(0);
   };
 
   // A reference to the mother bin if the bin got added to another somewhere.

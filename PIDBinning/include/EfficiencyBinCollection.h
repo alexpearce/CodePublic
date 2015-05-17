@@ -27,7 +27,7 @@ class EfficiencyBinCollection {
   virtual bool RemoveBin(EfficiencyBin*);
 
   // Updates all efficiencies
-  virtual void UpdateEfficiencies();
+  virtual void UpdateEfficiencies(bool final = false);
   virtual void SmearEfficiencies();
 
   // Makes something plotable

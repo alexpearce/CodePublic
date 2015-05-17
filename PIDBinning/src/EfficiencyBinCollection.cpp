@@ -52,9 +52,9 @@
   return frst == lst;
 }
 
-/*virtual*/ void EfficiencyBinCollection::UpdateEfficiencies() {
+/*virtual*/ void EfficiencyBinCollection::UpdateEfficiencies(bool final) {
   for (auto& bin : m_bins) {
-    bin->UpdateEfficiency();
+    bin->UpdateEfficiency(final);
   }
 }
 
@@ -66,7 +66,7 @@
 
 // Makes something plotable
 /*virtual*/ TH2Poly* EfficiencyBinCollection::MakePH2Poly(bool _binmap) {
-  auto poly = new TH2Poly();
+  auto poly = new TH2Poly("poly", "poly", 3000., 100000., 2., 5.);
   // sort(begin(m_bins), end(m_bins), [](EfficiencyBin* left, EfficiencyBin* right){return left->Area() > right->Area();});
   Int_t iColor = 0;
   poly->SetFloat();
@@ -175,19 +175,16 @@ Bool_t EfficiencyBinCollection::IsIntersecting(EfficiencyBin* bin1, EfficiencyBi
   EfficiencyBin* bottom = nullptr;
   Double_t smallest_kappa = 99999999.;
   Double_t temp_kappa = 0.;
-  for (int ismear = 0; ismear < 20; ismear++) {
-    for (auto& bin : m_bins) {
-      for (auto& neigh : bin->m_neighbours) {
-        auto neigh_toplevel = neigh->GetTopLevel();
-        temp_kappa = AdaptiveBinning::Kappa(bin, neigh_toplevel);
-        if (temp_kappa < smallest_kappa) {
-          top = bin;
-          bottom = neigh_toplevel;
-          smallest_kappa = temp_kappa;
-        }
+  for (auto& bin : m_bins) {
+    for (auto& neigh : bin->m_neighbours) {
+      auto neigh_toplevel = neigh->GetTopLevel();
+      temp_kappa = AdaptiveBinning::Kappa(bin, neigh_toplevel);
+      if (temp_kappa < smallest_kappa) {
+        top = bin;
+        bottom = neigh_toplevel;
+        smallest_kappa = temp_kappa;
       }
     }
-    SmearEfficiencies();
   }
 
   if (smallest_kappa < _max_kappa) {
