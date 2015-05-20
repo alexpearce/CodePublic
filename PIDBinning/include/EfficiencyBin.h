@@ -33,16 +33,21 @@ class EfficiencyBin : public TMultiGraph {
   Double_t GetTotalSumw2() const { return m_sum_Sq_total; }
   Double_t GetEfficiency() const { return m_efficiency; }
   Double_t GetEfficiencyError() const { return m_efficiency_error; }
+  Double_t GetEfficiencyErrorUp() const { return m_efficiency_error_up; }
+  Double_t GetEfficiencyErrorDown() const { return m_efficiency_error_down; }
 
-  std::vector<Double_t> GetSmearedEfficiency() const { return smeared; }
+  Int_t GetBinXID(){return m_iX;}
+  Int_t GetBinYID(){return m_iY;}
+  void SetBinXID(Int_t iX){m_iX = iX;}
+  void SetBinYID(Int_t iY){m_iY = iY;}
 
   // Fill this bin, flag indicates if the event passed the selection
   virtual void Fill(bool _passed = false, Double_t _weight = 1.0);
   // Updates the efficiencies. Uncertainty is -1000 if the bin is empty
   // and -1 if there is something weird due to weights. This ensures a
   // priority when merging bins.
-  virtual void UpdateEfficiency(bool final = false);
-  virtual void SmearEfficiency();
+  virtual void UpdateEfficiency();
+  virtual void UpdateNeighbours();
 
   // Some static factory functions for typical shapes
   static EfficiencyBin* RectangularBin(Double_t x1, Double_t y1, Double_t x2, Double_t y2);
@@ -62,11 +67,12 @@ class EfficiencyBin : public TMultiGraph {
   Double_t m_sum_Sq_total = 0;
 
   Double_t m_efficiency = 0;
-  std::vector<Double_t> smeared;
   Double_t m_efficiency_error = 0;
+  Double_t m_efficiency_error_up = 0;
+  Double_t m_efficiency_error_down = 0;
 
-  static TF1* smear;
-
+  Int_t m_iX = 0;
+  Int_t m_iY = 0;
 
   // For now, only some shapes are supported. So forbid manual construction.
   EfficiencyBin() {};
@@ -76,12 +82,8 @@ class EfficiencyBin : public TMultiGraph {
       exit(-1);
     }
     Add(_graph);
-    if(smear==nullptr){
-      std::cout << "Creating smear function!" << std::endl;
-      smear = new TF1("smear","x**[0]*(1-x)**[1]",0.,1.);
-      smear->SetNpx(5000);
-    }
-    smeared.resize(0);
+    //All bins are also a collection of subbins, always including themself
+    m_sub_bins.insert(this);
   };
 
   // A reference to the mother bin if the bin got added to another somewhere.
@@ -95,6 +97,12 @@ class EfficiencyBin : public TMultiGraph {
       return mother_bin->GetTopLevel();
     }
   }
+
+  //Store the initial neighours for later shape merging
+  EfficiencyBin *left = nullptr;
+  EfficiencyBin *right = nullptr;
+  EfficiencyBin *top = nullptr;
+  EfficiencyBin *bottom = nullptr;
 };
 
 namespace AdaptiveBinning {

@@ -4,6 +4,7 @@
 #include "TRandom3.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TTreeFormula.h"
 #include "TMath.h"
 
 #include "TH2Poly.h"
@@ -26,11 +27,10 @@ int main() {
 
   const Int_t NRGBs = 5;
   const Int_t NCont = 255;
-
-  Double_t stops[NRGBs] = {0.00, 0.34, 0.61, 0.84, 1.00};
-  Double_t red[NRGBs] = {0.00, 0.00, 0.87, 1.00, 0.51};
-  Double_t green[NRGBs] = {0.00, 0.81, 1.00, 0.20, 0.00};
-  Double_t blue[NRGBs] = {0.51, 1.00, 0.12, 0.00, 0.00};
+  Double_t stops[NRGBs] = {0.00, 0.25, 0.6, 0.85, 1.00};
+  Double_t red[NRGBs] = {1.00, 255. / 255., 255. / 255., 255. / 255., 186. / 255.};
+  Double_t green[NRGBs] = {1.00, 255. / 255., 162. / 255., 52. / 255., 0};
+  Double_t blue[NRGBs] = {1.00, 0, 0, 0, 0};
   TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
   atlasStyle->SetNumberContours(NCont);
   atlasStyle->SetPadTopMargin(0.06);
@@ -53,54 +53,45 @@ int main() {
   gROOT->ForceStyle();
 
   // Let's create a collection object
-  auto col = new EfficiencyBinCollection();
-
-  // Put in a few squares
-  Int_t nbins = 50;
-  for (int iX = 0; iX < nbins; iX++) {
-    for (int iY = 0; iY < nbins; iY++) {
-      Double_t eta_low = 2. + (5. - 2.)/nbins * iY;
-      Double_t eta_high = 2. + (5. - 2.)/nbins * (iY + 1);
-      Double_t p_low = 3000. + (100000. - 3000.)/nbins * iX;
-      Double_t p_high = 3000. + (100000. - 3000.)/nbins * (iX + 1);
-      col->AddBin(EfficiencyBin::RectangularBin(p_low, eta_low, p_high, eta_high));
-    }
-  }
-
-  // for (int iX = 0; iX < 50; iX++) {
-  // for (int iY = 0; iY < 50; iY++) {
-  // col->AddBin(EfficiencyBin::SquareBin(0.1 * iX, 0.1 * iY, 0.1));
-  //}
-  //}
+  auto col = new EfficiencyBinCollection("test", "test", 200, 3000., 100000., 200, 2., 5.);
 
   auto file = TFile::Open("./out_K.root");
+  // auto tree = dynamic_cast<TTree*>(file->Get("Lam0Calib"));
   auto tree = dynamic_cast<TTree*>(file->Get("RSDStCalib"));
+  // auto pid_form = new TTreeFormula("pid", "((P_CombDLLp - P_CombDLLK) > 5.0) && P_CombDLLp > 10.", tree);
+  auto pid_form = new TTreeFormula("pid", "K_CombDLLK > 5.0", tree);
+
   Double_t P = 0.;
   Double_t ETA = 0.;
-  Double_t PID = 0.;
   Double_t weight = 0.;
   Double_t run_number = 0.;
   tree->SetBranchStatus("*", 0);
   tree->SetBranchStatus("K_P", 1);
   tree->SetBranchStatus("K_Eta", 1);
+  tree->SetBranchStatus("K_CombDLLp", 1);
   tree->SetBranchStatus("K_CombDLLK", 1);
+  tree->SetBranchStatus("K_Eta", 1);
+  // tree->SetBranchStatus("K_CombDLLK", 1);
   tree->SetBranchStatus("runNumber", 1);
   tree->SetBranchStatus("nsig_sw", 1);
   tree->SetBranchAddress("K_P", &P);
   tree->SetBranchAddress("K_Eta", &ETA);
-  tree->SetBranchAddress("K_CombDLLK", &PID);
+  // tree->SetBranchAddress("Pi_CombDLLK", &PID);
   tree->SetBranchAddress("runNumber", &run_number);
   tree->SetBranchAddress("nsig_sw", &weight);
 
+  bool pid_passed = false;
   for (int i = 0; i < tree->GetEntries(); i++) {
-    if (i % 10000 == 0) {
+    if (i % 100000 == 0) {
       std::cout << "Loaded " << i << " / " << tree->GetEntries() << std::endl;
     }
+    tree->LoadTree(i);
     tree->GetEntry(i);
-    //if(run_number<126915|| run_number>126933){continue;}
-    //if(run_number<125951|| run_number>125951){continue;}
+    pid_passed = (pid_form->EvalInstance() < 0.001 ? false : true);
+    // if(run_number<126915|| run_number>126933){continue;}
+    // if(run_number<125951|| run_number>125951){continue;}
 
-    col->Fill(P, ETA, PID > 5., weight);
+    col->Fill(P, ETA, pid_passed, weight);
   }
 
   // for (int i = 0; i < 100000; ++i) {
@@ -124,13 +115,13 @@ int main() {
   col->BuiltNeighbourhood();
   col->PrintBins();
 
-  col->MergeBins(5.);
+  auto hist = col->MergeBins(2.);
 
   col->UpdateEfficiencies();
 
   col->PrintBins();
 
-  auto outfile = TFile::Open("output.root","RECREATE");
+  auto outfile = TFile::Open("output.root", "RECREATE");
 
   auto poly_after = col->MakePH2Poly();
   poly_after->Draw("COLZ");
@@ -141,14 +132,29 @@ int main() {
   canvas->Clear();
 
   outfile->WriteTObject(poly_after, "poly");
+  outfile->WriteTObject(hist, "kappa");
   outfile->Close();
 
   auto poly_map = col->MakePH2Poly(true);
-  poly_map->Draw("COLZ");
+  auto poly_map_colors = col->MakePH2Poly(true, true);
+  Double_t Stops[NRGBs] = {0.00, 0.34, 0.61, 0.84, 1.00};
+  Double_t Red[NRGBs] = {0.00, 0.00, 0.87, 1.00, 0.51};
+  Double_t Green[NRGBs] = {0.00, 0.81, 1.00, 0.20, 0.00};
+  Double_t Blue[NRGBs] = {0.51, 1.00, 0.12, 0.00, 0.00};
+  TColor::CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont);
+  atlasStyle->SetNumberContours(NCont);
+  gStyle->SetNumberContours(col->GetNBins());
+  poly_map_colors->Draw("COL");
   poly_map->Draw("TEXTsame");
   poly_map->GetXaxis()->SetTitle("#text{$p$ [MeV]}");
   poly_map->GetYaxis()->SetTitle("#text{$#eta$}");
   canvas->Print("map.tex");
+  canvas->Clear();
+
+  hist->GetXaxis()->SetTitle("#text{Kappa statistic $#kappa_{#alpha#beta}$}");
+  hist->GetXaxis()->SetTitle("#text{Normalised}");
+  hist->DrawNormalized("HIST");
+  canvas->Print("kappa.tex");
   canvas->Clear();
 
   return 0;
