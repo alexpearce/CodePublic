@@ -1,0 +1,48 @@
+===================================================
+==    Release history file for Meerkat package   ==
+===================================================
+
+================== Version 1.1.0 ===================
+
+2015-01-18, Anton Poluektov 
+  * Small change of interface for BinnedKernelDensity and 
+    AdaptiveKernelDensity: swap the order of optional 
+    toyEvents and maxEvents arguments in constructors. 
+
+2015-01-16, Anton Poluektov 
+  * Add PyROOT examples in python/
+
+2015-01-10, Anton Poluektov 
+  * Fix bug in the 2D polynomial PDF implementation 
+    (which used to loose the highest-power parameters). 
+
+2014-12-31, Anton Poluektov 
+  * Add support of ROOT files to store binned maps. 
+    ROOT or text file format is chosen depending 
+    on the file name extension. 
+
+2014-12-18, Anton Poluektov 
+  * Add ROOT CINT bindings and examples with 
+    CINT and PyROOT
+
+2014-12-02, Anton Poluektov 
+  * Add PolynomialDensity, PDF that can be fitted 
+    to a data distribution (using unbinned ML fit)
+
+================== Version 1.0.1 ===================
+
+2014-10-22, Anton Poluektov 
+  * Fix the bug in AdaptiveKernelDensity which results 
+    in wrong normalisation of the kernel (dependent on width)
+
+2014-10-15, Anton Poluektov 
+  * Normalise BinnedKernelDensity and AdaptiveKernelDensity 
+    to always have average PDF value equal to 1. 
+
+2014-10-13, Anton Poluektov 
+  * Add constructors for weighted NTuples
+
+=================== Version 1.0 ====================
+
+2014-10-10, Anton Poluektov
+  * Initial release of the Meerkat package
