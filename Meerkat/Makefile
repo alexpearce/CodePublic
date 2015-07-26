@@ -118,8 +118,8 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 # Rule to make ROOTCINT output file
 $(CINTOBJ): $(HHLIST) $(INCDIR)/$(PACKAGE)_LinkDef.h
 	@mkdir -p $(OBJDIR)
-	@echo "Running rootcint"
-	@$(ROOTBINDIR)/rootcint -f $(CINTFILE) -c $(INCLUDES) $(notdir $(HHLIST)) $(INCDIR)/$(PACKAGE)_LinkDef.h
+	@echo "Running rootcling"
+	@$(ROOTBINDIR)/rootcling -f $(CINTFILE) -c $(INCLUDES) $(notdir $(HHLIST)) $(INCDIR)/$(PACKAGE)_LinkDef.h
 	@echo "Compiling $(CINTFILE)"
 	@$(CXX) $(CXXFLAGS) -c $(CINTFILE) -o $(CINTOBJ)
 

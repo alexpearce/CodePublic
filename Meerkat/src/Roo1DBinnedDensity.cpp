@@ -136,14 +136,19 @@ void Roo1DBinnedDensity::readFromRootFile(const char* filename) {
   file.Close();
 }
 
+Roo1DBinnedDensity::Roo1DBinnedDensity(const Roo1DBinnedDensity& pdf, const char* name)
+    : RooAbsPdf(pdf, name),
+      m_var("x", this, pdf.m_var),
+      m_map(pdf.m_map),
+      m_binning(pdf.m_binning),
+      m_var_down(pdf.m_var_down),
+      m_var_up(pdf.m_var_up) {}
+
 Roo1DBinnedDensity::~Roo1DBinnedDensity() {}
 
-Double_t Roo1DBinnedDensity::evaluate() const{
-  return density(m_var);
+Double_t Roo1DBinnedDensity::evaluate() const { return density(m_var); }
 
-}
-
-Double_t Roo1DBinnedDensity::density(Double_t _x) const{
+Double_t Roo1DBinnedDensity::density(Double_t _x) const {
   UInt_t dim = m_dim;
 
   Int_t j;
