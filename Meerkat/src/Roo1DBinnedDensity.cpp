@@ -239,3 +239,15 @@ Double_t Roo1DBinnedDensity::density(Double_t _x) const {
 
   return e;
 }
+
+Int_t Roo1DBinnedDensity::getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* ) const
+{
+  if(matchArgs(allVars, analVars, m_var)) return 1;
+  return 0;
+}
+
+Double_t Roo1DBinnedDensity::analyticalIntegral(Int_t code, const char* ) const
+{
+  assert(code == 1);
+  return (m_var_up - m_var_down);
+}

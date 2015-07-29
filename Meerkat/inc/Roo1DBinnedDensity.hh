@@ -36,6 +36,8 @@ class Roo1DBinnedDensity : public RooAbsPdf {
   virtual ~Roo1DBinnedDensity();
   Roo1DBinnedDensity(const Roo1DBinnedDensity& other, const char* name = 0);
   virtual Roo1DBinnedDensity* clone(const char* newname) const { return new Roo1DBinnedDensity(*this, newname); }
+  Int_t getAnalyticalIntegral(RooArgSet& allVars, RooArgSet& analVars, const char* ) const;
+  Double_t analyticalIntegral(Int_t code, const char* ) const;
 
   //! Read the binned density from a ROOT file. The dimensionality of the density stored in the file should match the dimensionality of the phase
   //space.
